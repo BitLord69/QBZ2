@@ -1,88 +1,69 @@
 package com.example.thomas.qbz;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.Rect;
+import android.content.Context;
+import android.graphics.Color;
+import android.support.v7.widget.GridLayout;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageView;
+
+import com.example.thomas.utils.qbz.PixelHelper;
+
 
 /**
  * Created by Thomas on 2018-10-06.
  */
 
-public class Cube implements GameObject {
-    private int color;
-    private Rect rectangle;
-//    private int xPos,yPos;
-    private int size;
+public class Cube extends ImageView implements View.OnTouchListener {
+
+    private int m_number;
+    private CubeListener m_cListener;
     private boolean empty = false;
 
-    private int moveX,moveY;
-
-    public Cube(int color, int startX, int startY, int size){
-        this.color = color;
-//        this.xPos = startX;
-//        this.yPos = startY;
-        this.size = size;
-        moveX = startX;
-        moveY = startY;
-
-        rectangle = new Rect( startX, startY,startX+size,startY+size);
-
-
+    public Cube(Context context){
+        super(context);
     }
 
-    @Override
-    public void draw(Canvas canvas) {
-        if(!empty) {
-            Paint paint = new Paint();
-            paint.setColor(color);
-            canvas.drawRect(rectangle, paint);
-        }
-    }
+    public Cube(Context context, CubeListener listener, int nColor, int nRawHeight, int nNumber){
+        super(context);
 
-    @Override
-    public void update() {
-        int xPos = rectangle.left;
-        int yPos = rectangle.top;
+        m_number = nNumber;
+        this.m_cListener = listener;
+        this.setImageResource(R.drawable.rectangle);
 
-        if(!empty) {
-            if (xPos > moveX)
-                xPos--;
-            else if (xPos < moveX)
-                xPos++;
-            if (yPos > moveY)
-                yPos--;
-            else if (yPos < moveY)
-                yPos++;
+        this.setColorFilter(nColor);
 
-            rectangle.set(xPos,yPos,xPos+size,yPos-size);
-        }
+        int dpHeight = PixelHelper.pixelsToDp(nRawHeight, context);
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.setMargins(MainActivity.PADDING ,MainActivity.PADDING,MainActivity.PADDING,MainActivity.PADDING);
+        params.width = params.height = nRawHeight;
+//        params.width = params.height = dpHeight;
 
+//        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(dpHeight, dpHeight);
+
+        setLayoutParams(params);
+
+        setOnTouchListener(this);
     }
 
     public void setEmpty(){
         empty = true;
+        this.setColorFilter(Color.DKGRAY);
     }
     public boolean isEmpty(){return empty;}
 
-    public void setMove(int moveX,int moveY){
-        this.moveX = moveX;
-        this.moveY = moveY;
+    public int getNumber(){ return m_number;}
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            m_cListener.cubePressed(this);
+        }
+        return true;
     }
 
-
-    // getters/setters
-    public int getColor(){return color;}
-    public void setColor(int color){
-        this.color = color;
+    public interface CubeListener{
+        void cubePressed(Cube cube);
     }
-
-    public void setPos(int xPos, int yPos){
-        rectangle.left = xPos;
-        rectangle.top = yPos;
-    }
-
-    public Point getPos(){return new Point(rectangle.left,rectangle.top);    }
-
-    public Rect getRectangle(){return rectangle;}
 }

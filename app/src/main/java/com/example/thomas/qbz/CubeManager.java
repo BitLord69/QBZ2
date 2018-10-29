@@ -1,8 +1,10 @@
 package com.example.thomas.qbz;
 
-import android.graphics.Canvas;
+import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Paint;
+import android.support.v7.widget.GridLayout;
+import android.util.Log;
+import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,36 +13,41 @@ import java.util.Collections;
  * Created by Thomas on 2018-10-06.
  */
 
-public class CubeManager {
+public class CubeManager implements Cube.CubeListener {
+    private int m_nCubeSize;
+    private int m_nCubeDimension; // size of side of cube
+    private int m_nNumColors = 5;
+
+    private GridLayout mContentView;
+
+    private Context m_context;
+
     private ArrayList<Cube> cubes;
-    private int cubeSize;
-    private int n_x_nCube; // size of side of cube
-    private int drawPosX,drawPosY;
     private ArrayList<Integer> colorArray;
-    private int nbrOfColors = 5;
+    private int m_nEmpty = 0;
 
-    public CubeManager(int n_x_nCube, int cubeSize, int drawPosX, int drawPosY){
-        this.n_x_nCube = n_x_nCube;
-        this.cubeSize = cubeSize;
-        this.drawPosX = drawPosX;
-        this.drawPosY = drawPosY;
+    public CubeManager(GridLayout view, Context context, int nCubeDimension, int cubeSize){
+        this.m_nCubeDimension = nCubeDimension;
+        this.m_nCubeSize = cubeSize;
+        this.m_context = context;
+        mContentView = view;
 
+Log.i("TAG", "I CubeManager.CubeManager - size: " + cubeSize);
         createArray();
-
     }
 
     private void createColorArray(){
         colorArray = new ArrayList<Integer>();
-        for(int i = 0; i<n_x_nCube*n_x_nCube; i++){
-            if((i%nbrOfColors) == 0)
+        for(int i = 0; i < m_nCubeDimension * m_nCubeDimension; i++){
+            if((i% m_nNumColors) == 0)
                 colorArray.add(Color.BLUE);
-            else if((i%nbrOfColors) == 1)
+            else if((i% m_nNumColors) == 1)
                 colorArray.add(Color.RED);
-            else if((i%nbrOfColors) == 2)
+            else if((i% m_nNumColors) == 2)
                 colorArray.add(Color.GREEN);
-            else if((i%nbrOfColors) == 3)
+            else if((i% m_nNumColors) == 3)
                 colorArray.add(Color.YELLOW);
-            else if((i%nbrOfColors) == 4)
+            else if((i% m_nNumColors) == 4)
                 colorArray.add(Color.MAGENTA);
         }
         Collections.shuffle(colorArray);
@@ -50,72 +57,48 @@ public class CubeManager {
         cubes = new ArrayList<>();
         createColorArray();
 
-        for(int i=0;i<n_x_nCube;i++){
-            for(int j=0;j<n_x_nCube;j++) {
-                Cube c = new Cube(colorArray.get(j + n_x_nCube*i), drawPosX + (j*cubeSize), drawPosY + (i*cubeSize), cubeSize);
+        int nRowHeight, nColWidth;
+
+        nRowHeight = nColWidth = m_nCubeSize * m_nCubeDimension;
+
+        for(int i = 0; i < m_nCubeDimension; i++){
+            for(int j = 0; j < m_nCubeDimension; j++) {
+                Cube c = new Cube(m_context ,this, colorArray.get(j + m_nCubeDimension * i), m_nCubeSize, j + (i * m_nCubeDimension) + 1);
+//                c.setX(m_nDrawPosX + (j * m_nCubeSize));
+//                c.setY(m_nDrawPosY + (i * m_nCubeSize));
                 cubes.add(c);
+                mContentView.addView(c);
             }
         }
-        cubes.get(0).setEmpty();
+        cubes.get(m_nEmpty).setEmpty();
     }
 
-    public void draw(Canvas canvas){
-        for(Cube cu : cubes)
-            cu.draw(canvas);
-    }
+    @Override
+    public void cubePressed(Cube cube) {
+        // Beräkna rad och kolumn för den klickade kuben
+        int rad = (int)((cube.getNumber() - 1) / m_nCubeDimension) + 1;
+        int kol = cube.getNumber() - ((rad - 1) * m_nCubeDimension);
 
-    public void update(){
-        for(Cube cu : cubes)
-            cu.update();
-    }
+        // Beräkna rad och kolumn för den tomma kuben
+        int tomrad = (int)((m_nEmpty) / m_nCubeDimension) + 1;
+        int tomkol = (m_nEmpty + 1) - ((tomrad - 1) * m_nCubeDimension);
 
-    public void checkHit(int xPos, int yPos){
-        int i = 0;
-        boolean canMove = false;
-        for(Cube cu : cubes) {
-            boolean test = false;
+        // Kolla om den tomma och klickade kuben är bredvid eller över och under varandra så att det går att byta
+        if ((Math.abs(rad - tomrad) == 0 && Math.abs(kol - tomkol) == 1) ||
+                (Math.abs(rad - tomrad) == 1 && Math.abs(kol - tomkol) == 0)) {
 
-            int testX = cu.getPos().x;
-            int testY  = cu.getPos().y;
-            int testWidth = cu.getRectangle().width();
-            if(xPos > testX && xPos < testX + testWidth && yPos > testY && yPos < testY + testWidth)
-                test = true;
-            //test = cu.getRectangle().contains(testX+5,testY+5);
-            //cu.getRectangle().contains(xPos, yPos)
-
-
-
-            if(test){
-
-                if(cubes.get(i - 1)!= null){
-                    if(cubes.get(i - 1).isEmpty()) {
-                        cu.setMove(cubes.get(i - 1).getPos().x, cubes.get(i - 1).getPos().y);
-                        cubes.get(i - 1).setPos(cu.getPos().x,cu.getPos().y);
-                    }
-                }else if(cubes.get(i + 1)!= null) {
-                    if (cubes.get(i + 1).isEmpty()) {
-                        cu.setMove(cubes.get(i + 1).getPos().x, cubes.get(i + 1).getPos().y);
-                        cubes.get(i + 1).setPos(cu.getPos().x, cu.getPos().y);
-                    }
-                }else if(cubes.get(i - n_x_nCube)!= null){
-                    if(cubes.get(i-n_x_nCube).isEmpty()) {
-                        cu.setMove(cubes.get(i - n_x_nCube).getPos().x, cubes.get(i - n_x_nCube).getPos().y);
-                        cubes.get(i - n_x_nCube).setPos(cu.getPos().x, cu.getPos().y);
-                    }
-                }else if(cubes.get(i + n_x_nCube)!= null) {
-                    if (cubes.get(i + n_x_nCube).isEmpty()){
-                        cu.setMove(cubes.get(i + n_x_nCube).getPos().x, cubes.get(i + n_x_nCube).getPos().y);
-                        cubes.get(i + n_x_nCube).setPos(cu.getPos().x, cu.getPos().y);
-                    }
-                }
-
-
-
-            }
-            i++;
-
+            // Byt färg på den tomma och den klickade rutorna
+            cubes.get(m_nEmpty).setColorFilter(cubes.get(cube.getNumber() - 1).getColorFilter());
+            m_nEmpty = cube.getNumber() - 1;
+            cubes.get(m_nEmpty).setEmpty();
         }
+
+        Log.i("TAG", "Tryckte visst på ruta " + cube.getNumber() + ", rad: " + rad + ", kolumn: " + kol + ", tom rad: " + tomrad + ", tom kol: " + tomkol);
+        Log.i("TAG","Diff x: " + Math.abs(rad - tomrad) + ", diff y: " +  Math.abs(kol - tomkol) + ", storlek: " + cube.getMeasuredWidth());
     }
 
-
+    public int getCubeSize(){
+//        return cubes.get(0).getWidth();
+        return m_nCubeSize;
+    }
 }
