@@ -15,7 +15,7 @@ import com.example.thomas.utils.qbz.PixelHelper;
  * Created by Thomas on 2018-10-06.
  */
 
-public class Cube extends ImageView implements View.OnTouchListener {
+public class Cube extends android.support.v7.widget.AppCompatImageView implements View.OnTouchListener {
 
     private int m_number;
     private CubeListener m_cListener;
@@ -51,9 +51,11 @@ public class Cube extends ImageView implements View.OnTouchListener {
         empty = true;
         this.setColorFilter(Color.DKGRAY);
     }
-    public boolean isEmpty(){return empty;}
+    public boolean isEmpty(){ return empty; }
 
     public int getNumber(){ return m_number;}
+
+    public void setNumber(int nNew) { m_number = nNew; }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
